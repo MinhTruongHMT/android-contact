@@ -5,11 +5,16 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -23,12 +28,14 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.UUID;
 
 import stu.edu.phuthuan.adapter.UserAdapter;
 import stu.edu.phuthuan.model.User;
@@ -44,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
     ListView lvDSNhanvien;
     ImageView avatarImageView;
     private static final int PICK_IMAGE_REQUEST = 1;
+    static final int REQUEST_IMAGE_CAPTURE = 1;
     private DatabaseHelper dbHelper;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,13 +76,13 @@ public class MainActivity extends AppCompatActivity {
         lvDSNhanvien = findViewById(R.id.lvDanhSach);
         lvDSNhanvien.setAdapter(adapter);
     }
-
     private void addEvents() {
         avatarImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent galleryIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-                startActivityForResult(galleryIntent, PICK_IMAGE_REQUEST);
+//                Intent galleryIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+//                startActivityForResult(galleryIntent, PICK_IMAGE_REQUEST);
+                dispatchTakePictureIntent();
             }
         });
         btnLuu.setOnClickListener(new View.OnClickListener() {
@@ -126,23 +134,32 @@ public class MainActivity extends AppCompatActivity {
                 return true; // Trả về true để ngăn chặn sự kiện `onItemClick` từ được gọi sau đó.
             }
         });
-
     }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null) {
-            // Lấy Uri của ảnh được chọn
-            Uri selectedImageUri = data.getData();
-            // Hiển thị ảnh trong ImageView
-            avatarImageView.setImageURI(selectedImageUri);
+//        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null) {
+//            // Lấy Uri của ảnh được chọn
+//            Uri selectedImageUri = data.getData();
+//            // Hiển thị ảnh trong ImageView
+//            avatarImageView.setImageURI(selectedImageUri);
+//        }
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK) {
+            Bundle extras = data.getExtras();
+            Bitmap imageBitmap = (Bitmap) extras.get("data");
+            avatarImageView.setImageBitmap(imageBitmap);
         }
     }
     private void addValue(User user) {
+        String imageName = "image_" + UUID.randomUUID().toString() + ".jpg";
         ContentValues values = new ContentValues();
         values.put("name", user.getFullName());
         values.put("nick_name", user.getNickName());
         values.put("email", user.getEmail());
+
+        // Chuyển đổi hình ảnh thành mảng byte trước khi lưu vào cơ sở dữ liệu
+        byte[] imageBytes = convertBitmapToByteArray(avatarImageView.getDrawingCache());
+        values.put("image", imageBytes);
 
         long result = dbHelper.insertData("User", values);
 
@@ -151,11 +168,19 @@ public class MainActivity extends AppCompatActivity {
             user.setId((int)result);
             dsUser.add(user);
             adapter.notifyDataSetChanged();
-
         } else {
+            deleteImage(imageName);
             Toast.makeText(this, "Lỗi khi chèn dữ liệu", Toast.LENGTH_SHORT).show();
         }
     }
+
+    // Hàm chuyển đổi Bitmap thành mảng byte
+    private byte[] convertBitmapToByteArray(Bitmap bitmap) {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        return stream.toByteArray();
+    }
+
     private void docDuLieu() {
         Cursor cursor = dbHelper.getAllData();
 
@@ -178,6 +203,49 @@ public class MainActivity extends AppCompatActivity {
         // Đừng quên đóng cursor khi đã sử dụng xong
         cursor.close();
     }
+    private void dispatchTakePictureIntent() {
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        try {
+            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+        } catch (ActivityNotFoundException e) {
+            // display error state to the user
+        }
+    }
+    private boolean saveImage(Bitmap bitmap, String imageName){
+        // Tạo thư mục lưu ảnh trong bộ nhớ nội tại của ứng dụng
+        File directory = new File(getFilesDir() + "/images/");
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+        File file = new File(directory, imageName);
+        // Lưu ảnh vào bộ nhớ nội tại
+        try {
+            FileOutputStream outputStream = new FileOutputStream(file);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+            outputStream.flush();
+            outputStream.close();
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    private boolean deleteImage(String imageName) {
+        // Tạo đường dẫn đầy đủ đến file ảnh
+        File directory = new File(getFilesDir() + "/images/");
+        File file = new File(directory, imageName);
 
+        // Kiểm tra xem tệp tồn tại trước khi xóa
+        if (file.exists()) {
+            // Thực hiện xóa và kiểm tra xem xóa có thành công hay không
+            if (file.delete()) {
+                return true; // Xóa thành công
+            } else {
+                return false; // Xóa không thành công
+            }
+        } else {
+            return false; // Tệp không tồn tại
+        }
+    }
 
 }
