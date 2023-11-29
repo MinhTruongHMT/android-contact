@@ -1,10 +1,12 @@
 package stu.edu.phuthuan.model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class User {
+public class User implements Serializable {
+    private int id;
     private String fullName;
     private String nickName;
     private Date year;
@@ -25,6 +27,7 @@ public class User {
 //        this.avatar = avatar;
 //    }
     public User(String fullName, String nickName, String email) {
+        this.id = 0;
         this.fullName = fullName;
         this.nickName = nickName;
         this.email = email;
@@ -87,6 +90,14 @@ public class User {
     public String toString() {
         return this.fullName + "\\" + this.nickName + "\\"+
                 this.email ;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 }
 

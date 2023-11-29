@@ -55,7 +55,8 @@ public class UserAdapter extends ArrayAdapter<User> {
                 // Xử lý sự kiện khi nút Edit được nhấn
                 // Ví dụ: Mở một Activity để chỉnh sửa thông tin người dùng
                 Intent  intent = new Intent(context, SuaThongTin.class);
-
+                intent.putExtra("USER",nv);
+                context.startActivity(intent);
             }
         });
         return convertView;
