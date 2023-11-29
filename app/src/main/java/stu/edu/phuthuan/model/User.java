@@ -12,7 +12,7 @@ public class User implements Serializable {
     private Date year;
     private List<SocialNetwork> socialNetwork;
     private String email;
-    private String avatar;
+    private byte[] image;
 
     public User() {
         this.socialNetwork = new ArrayList<>();
@@ -75,12 +75,12 @@ public class User implements Serializable {
         this.email = email;
     }
 
-    public String getAvatar() {
-        return avatar;
+    public byte[] getAvatar() {
+        return image;
     }
 
-    public void setAvatar(String avatar) {
-        this.avatar = avatar;
+    public void setAvatar(byte[] avatar) {
+        this.image = avatar;
     }
     public  boolean addSocialNetWord(SocialNetwork scnw){
         return this.socialNetwork.add(scnw);
