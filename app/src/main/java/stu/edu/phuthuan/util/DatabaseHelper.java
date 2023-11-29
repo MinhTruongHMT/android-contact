@@ -28,6 +28,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return db.rawQuery("SELECT * FROM User", null);
     }
 
+    public Cursor getAllDataNetworld() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery("SELECT * FROM net_world", null);
+    }
+
+
     public long insertData(String tableName, ContentValues values) {
         SQLiteDatabase db = this.getWritableDatabase();
         long result = -1;
