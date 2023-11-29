@@ -2,11 +2,14 @@ package stu.edu.phuthuan.adapter;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,14 +25,12 @@ public class UserAdapter extends ArrayAdapter<User> {
     int resource;
     List<User> object;
 
-
     public UserAdapter(
             Activity context, int resource, List<User> object) {
         super(context, resource, object);
         this.context = context;
         this.resource = resource;
         this.object = object;
-
     }
 
     @Override
@@ -42,12 +43,13 @@ public class UserAdapter extends ArrayAdapter<User> {
         TextView txtTen = convertView.findViewById(R.id.txtTen);
         TextView txtSdt = convertView.findViewById(R.id.txtEmail);
         ImageButton btnEdit = convertView.findViewById(R.id.btnEdit);
+        ImageView ivAvatar = convertView.findViewById(R.id.ivavatar);
 
         User nv = this.object.get(position);
         txtMa.setText(nv.getFullName());
         txtTen.setText(nv.getNickName());
         txtSdt.setText(nv.getEmail());
-
+        ivAvatar.setImageBitmap(convertByteArrayToBitmap(nv.getAvatar()));
         // Thêm sự kiện click cho btnEdit
         btnEdit.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -61,5 +63,9 @@ public class UserAdapter extends ArrayAdapter<User> {
         });
         return convertView;
     }
+    public static Bitmap convertByteArrayToBitmap(byte[] byteArray) {
+        return BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
+    }
+
 
 }

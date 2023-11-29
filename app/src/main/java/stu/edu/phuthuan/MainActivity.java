@@ -53,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int PICK_IMAGE_REQUEST = 1;
     static final int REQUEST_IMAGE_CAPTURE = 1;
     private DatabaseHelper dbHelper;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
         addEvents();
 
     }
+
     private void addControls() {
         txtFullName = findViewById(R.id.editName);
         txtNickName = findViewById(R.id.editNickName);
@@ -76,6 +78,7 @@ public class MainActivity extends AppCompatActivity {
         lvDSNhanvien = findViewById(R.id.lvDanhSach);
         lvDSNhanvien.setAdapter(adapter);
     }
+
     private void addEvents() {
         avatarImageView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -135,6 +138,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -150,22 +154,27 @@ public class MainActivity extends AppCompatActivity {
             avatarImageView.setImageBitmap(imageBitmap);
         }
     }
+
     private void addValue(User user) {
         String imageName = "image_" + UUID.randomUUID().toString() + ".jpg";
         ContentValues values = new ContentValues();
         values.put("name", user.getFullName());
         values.put("nick_name", user.getNickName());
         values.put("email", user.getEmail());
-
+        avatarImageView.setDrawingCacheEnabled(true);
+        Bitmap bitmap = Bitmap.createBitmap(avatarImageView.getDrawingCache());
+        byte[] imageBytes = convertBitmapToByteArray(bitmap);
+        avatarImageView.setDrawingCacheEnabled(false);
         // Chuyển đổi hình ảnh thành mảng byte trước khi lưu vào cơ sở dữ liệu
-        byte[] imageBytes = convertBitmapToByteArray(avatarImageView.getDrawingCache());
+
         values.put("image", imageBytes);
 
         long result = dbHelper.insertData("User", values);
 
         if (result != -1) {
             Toast.makeText(this, "Dữ liệu đã được chèn thành công", Toast.LENGTH_SHORT).show();
-            user.setId((int)result);
+            user.setId((int) result);
+            user.setAvatar(imageBytes);
             dsUser.add(user);
             adapter.notifyDataSetChanged();
         } else {
@@ -192,8 +201,10 @@ public class MainActivity extends AppCompatActivity {
                 @SuppressLint("Range") String name = cursor.getString(cursor.getColumnIndex("name"));
                 @SuppressLint("Range") String nickName = cursor.getString(cursor.getColumnIndex("nick_name"));
                 @SuppressLint("Range") String email = cursor.getString(cursor.getColumnIndex("email"));
+                @SuppressLint("Range") byte[] image = cursor.getBlob(cursor.getColumnIndex("image"));
                 User user = new User(name, nickName, email);
                 user.setId(id);
+                user.setAvatar(image);
                 dsUser.add(user);
                 adapter.notifyDataSetChanged();
                 // Thực hiện các thao tác khác
@@ -203,6 +214,7 @@ public class MainActivity extends AppCompatActivity {
         // Đừng quên đóng cursor khi đã sử dụng xong
         cursor.close();
     }
+
     private void dispatchTakePictureIntent() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         try {
@@ -211,7 +223,8 @@ public class MainActivity extends AppCompatActivity {
             // display error state to the user
         }
     }
-    private boolean saveImage(Bitmap bitmap, String imageName){
+
+    private boolean saveImage(Bitmap bitmap, String imageName) {
         // Tạo thư mục lưu ảnh trong bộ nhớ nội tại của ứng dụng
         File directory = new File(getFilesDir() + "/images/");
         if (!directory.exists()) {
@@ -230,6 +243,7 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
     }
+
     private boolean deleteImage(String imageName) {
         // Tạo đường dẫn đầy đủ đến file ảnh
         File directory = new File(getFilesDir() + "/images/");
